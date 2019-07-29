@@ -1,21 +1,43 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
 )
 
-func main(){
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request)  {
-        fmt.Fprintf(w, "This is a website server by a Go HTTP Server.")
-    })
+type Shape interface {
+	Area() float64
+	Perimeter() float64
+}
 
-    http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request)  {
-        fmt.Fprintf(w, "Hello World! I'm a http server!")
-    })
+type Rect struct {
+	Width  float64
+	Length float64
+}
 
-    fs := http.FileServer(http.Dir("static/"))
-    http.Handle("/static/", http.StripPrefix("/static/", fs))
+func (r Rect) Area() float64 {
+	return r.Length * r.Width
+}
 
-    http.ListenAndServe(":3001", nil)
+func (r Rect) Perimeter() float64 {
+	return 2 * (r.Length + r.Width)
+}
+
+func main() {
+	var r Shape
+	r = Rect{5.5, 4.5}
+
+	a := func(w http.ResponseWriter, _ *http.Request) {
+		io.WriteString(w, fmt.Sprint(r.Area()))
+	}
+
+	p := func(w http.ResponseWriter, _ *http.Request) {
+		io.WriteString(w, fmt.Sprint(r.Perimeter()))
+	}
+
+	http.HandleFunc("/area", a)
+	http.HandleFunc("/perimeter", p)
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
